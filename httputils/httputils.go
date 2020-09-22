@@ -1,3 +1,6 @@
+/*
+Package httputils provides utilities to complement the net/http package.
+*/
 package httputils
 
 import (
@@ -25,36 +28,34 @@ func SubHandlerFunc(f http.HandlerFunc) SubHandler {
 // handler: http.Handler for pattern
 //
 // Example usage...
-// ```
-// // define a 'login' handler
-// func loginHandler(prefix string) http.Handler {
-// 	mux := http.NewServeMux()
-// 	httputils.MuxSubGroup(mux, prefix, "/", httputils.SubHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		fmt.Fprintf(w, "login handler\n")
-// 	}))
-// 	httputils.MuxSubGroup(mux, prefix, "/check", httputils.SubHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		fmt.Fprintf(w, "check handler\n")
-// 	}))
-// 	return mux
-// }
-//
-// // define a handler for 'auth' that registers the login handler under subpath '/login'
-// func authHandler(prefix string) http.Handler {
-// 	mux := http.NewServeMux()
-// 	httputils.MuxSubGroup(mux, prefix, "/", httputils.SubHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		fmt.Fprintf(w, "auth handler\n")
-// 	}))
-// 	httputils.MuxSubGroup(mux, prefix, "/login", loginHandler)
-// 	return mux
-// }
-//
-// // define root handler that registers the auth handler under subpath '/auth' (which implies also '/auth/login')
-// root := http.NewServeMux()
-// httputils.MuxSubGroup(root, prefix, "/", httputils.SubHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 	fmt.Fprintf(w, "root handler\n")
-// }))
-// httputils.MuxSubGroup(root, "", "/auth", authHandler)
-// ```
+// 	 // define a 'login' handler
+// 	 func loginHandler(prefix string) http.Handler {
+// 	 	mux := http.NewServeMux()
+// 	 	httputils.MuxSubGroup(mux, prefix, "/", httputils.SubHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 	 		fmt.Fprintf(w, "login handler\n")
+// 	 	}))
+// 	 	httputils.MuxSubGroup(mux, prefix, "/check", httputils.SubHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 	 		fmt.Fprintf(w, "check handler\n")
+// 	 	}))
+// 	 	return mux
+// 	 }
+//	 
+// 	 // define a handler for 'auth' that registers the login handler under subpath '/login'
+// 	 func authHandler(prefix string) http.Handler {
+// 	 	mux := http.NewServeMux()
+// 	 	httputils.MuxSubGroup(mux, prefix, "/", httputils.SubHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 	 		fmt.Fprintf(w, "auth handler\n")
+// 	 	}))
+// 	 	httputils.MuxSubGroup(mux, prefix, "/login", loginHandler)
+// 	 	return mux
+// 	 }
+//	 
+// 	 // define root handler that registers the auth handler under subpath '/auth' (which implies also '/auth/login')
+// 	 root := http.NewServeMux()
+// 	 httputils.MuxSubGroup(root, prefix, "/", httputils.SubHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 	 	fmt.Fprintf(w, "root handler\n")
+// 	 }))
+// 	 httputils.MuxSubGroup(root, "", "/auth", authHandler)
 //
 func MuxSubGroup(mux *http.ServeMux, prefix string, pattern string, constructor SubHandler) {
 	prefix = "/" + strings.Trim(prefix, "/")
