@@ -55,6 +55,20 @@ func TestGetClaims(t *testing.T) {
 	if err != nil {
 		t.Error("could not unmarshal claims")
 	} else {
-		t.Log("cliams =", claims)
+		t.Log("claims =", claims)
+	}
+
+	// convert claims to a structure
+	userClaims := struct {
+		Username string
+		Address  string
+	}{}
+	b, _ := json.Marshal(claims)
+	t.Log("b =", string(b))
+	err = json.Unmarshal(b, &userClaims)
+	if err != nil {
+		t.Error(err.Error())
+	} else {
+		t.Log("userClaims =", userClaims)
 	}
 }
