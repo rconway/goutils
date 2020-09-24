@@ -1,19 +1,32 @@
 package jwt
 
 import (
-	"encoding/json"
-	"strings"
+	"fmt"
+	"os"
 	"testing"
 )
 
 const EncodedJSON = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"
 const ExpectedJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyZXNzIjoiU3RvdGZvbGQiLCJ1c2VybmFtZSI6InJjb253YXkifQ.flmSqrq09bwTQvylFtBo4gzr-ZGmDqUtJDCLU60rIms"
+const Key = "fredbob"
+
+var ExampleClaims map[string]interface{}
+
+func TestMain(m *testing.M) {
+	ExampleClaims = make(map[string]interface{})
+	ExampleClaims["username"] = "rconway"
+	ExampleClaims["address"] = "Stotfold"
+	os.Exit(m.Run())
+}
 
 func TestEncodeJSON(t *testing.T) {
 	j := make(map[string]interface{})
 	j["alg"] = "HS256"
 	j["typ"] = "JWT"
-	jbytes := EncodeJSON(j)
+	jbytes, err := EncodeJSON(j)
+	if err != nil {
+		t.Error(err)
+	}
 	jstr := string(jbytes)
 	t.Log("json =", jstr)
 	if string(jstr) != EncodedJSON {
@@ -28,11 +41,12 @@ func TestBase64Encode(t *testing.T) {
 
 func TestMakeToken(t *testing.T) {
 	// claims
-	claims := make(map[string]interface{})
-	claims["username"] = "rconway"
-	claims["address"] = "Stotfold"
+	claims := ExampleClaims
 
-	token := MakeToken(claims, "fredbob")
+	token, err := MakeToken(claims, Key)
+	if err != nil {
+		t.Error(err)
+	}
 
 	t.Log("token =", token)
 	if token != ExpectedJWT {
@@ -41,34 +55,14 @@ func TestMakeToken(t *testing.T) {
 }
 
 func TestGetClaims(t *testing.T) {
-	token := ExpectedJWT
-
-	parts := strings.Split(token, ".")
-
-	// h := parts[0]
-	c := parts[1]
-	// s := parts[2]
-
-	cb := Base64Decode(c)
-	claims := make(map[string]interface{})
-	err := json.Unmarshal(cb, &claims)
+	claims, err := GetClaims(ExpectedJWT, Key)
 	if err != nil {
-		t.Error("could not unmarshal claims")
-	} else {
-		t.Log("claims =", claims)
+		t.Error("error getting claims from token")
 	}
 
-	// convert claims to a structure
-	userClaims := struct {
-		Username string
-		Address  string
-	}{}
-	b, _ := json.Marshal(claims)
-	t.Log("b =", string(b))
-	err = json.Unmarshal(b, &userClaims)
-	if err != nil {
-		t.Error(err.Error())
-	} else {
-		t.Log("userClaims =", userClaims)
+	if claims["username"] != "rconway" {
+		t.Error(fmt.Sprintf("wrong username: expected rconway, got %v", claims["username"]))
 	}
+
+	t.Log("claims =", claims)
 }
