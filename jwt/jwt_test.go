@@ -60,9 +60,9 @@ func TestGetClaims(t *testing.T) {
 
 	for k, v := range ExampleClaims {
 		if v != claims[k] {
-			t.Error(fmt.Sprintf("wrong %v: expected %v, got %v", k, v, claims[k]))
+			t.Error(fmt.Sprintf("claim check FAILURE [%v]: expected %v, got %v", k, v, claims[k]))
 		} else {
-			t.Log(fmt.Sprintf("checked claim: %v (%v)", k, v))
+			t.Log(fmt.Sprintf("claim check SUCCESS [%v]: %v", k, v))
 		}
 	}
 }
