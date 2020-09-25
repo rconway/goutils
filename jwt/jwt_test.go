@@ -1,12 +1,13 @@
 package jwt
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
 )
 
-const EncodedJSON = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"
+const ExpectedBase64 = "eyJhZGRyZXNzIjoiU3RvdGZvbGQiLCJ1c2VybmFtZSI6InJjb253YXkifQ"
 const ExpectedJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyZXNzIjoiU3RvdGZvbGQiLCJ1c2VybmFtZSI6InJjb253YXkifQ.flmSqrq09bwTQvylFtBo4gzr-ZGmDqUtJDCLU60rIms"
 const Key = "fredbob"
 
@@ -19,50 +20,49 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestEncodeJSON(t *testing.T) {
-	j := make(map[string]interface{})
-	j["alg"] = "HS256"
-	j["typ"] = "JWT"
-	jbytes, err := EncodeJSON(j)
-	if err != nil {
-		t.Error(err)
-	}
-	jstr := string(jbytes)
-	t.Log("json =", jstr)
-	if string(jstr) != EncodedJSON {
-		t.Error("unexpected json string:", jstr)
-	}
-}
-
 func TestBase64Encode(t *testing.T) {
-	b64 := Base64Encode([]byte(EncodedJSON))
-	t.Log("b64 =", b64)
+	sampleJSON, err := json.Marshal(ExampleClaims)
+	if err != nil {
+		t.Error("error creating ExampleClaims as JSON:", err)
+	}
+	b64 := Base64Encode([]byte(sampleJSON))
+
+	if b64 != ExpectedBase64 {
+		t.Error("wrong base64 outcome:", b64)
+	} else {
+		t.Log("ExampleClaims (base64) =", b64)
+	}
 }
 
 func TestMakeToken(t *testing.T) {
 	// claims
 	claims := ExampleClaims
 
+	// create token
 	token, err := MakeToken(claims, Key)
 	if err != nil {
-		t.Error(err)
+		t.Error("error making token:", err)
 	}
 
-	t.Log("token =", token)
+	// check
 	if token != ExpectedJWT {
 		t.Error("wrong jwt outcome:", token)
+	} else {
+		t.Log("token =", token)
 	}
 }
 
 func TestGetClaims(t *testing.T) {
 	claims, err := GetClaims(ExpectedJWT, Key)
 	if err != nil {
-		t.Error("error getting claims from token")
+		t.Error("error getting claims from token:", err)
 	}
 
-	if claims["username"] != "rconway" {
-		t.Error(fmt.Sprintf("wrong username: expected rconway, got %v", claims["username"]))
+	for k, v := range ExampleClaims {
+		if v != claims[k] {
+			t.Error(fmt.Sprintf("wrong %v: expected %v, got %v", k, v, claims[k]))
+		} else {
+			t.Log(fmt.Sprintf("checked claim: %v (%v)", k, v))
+		}
 	}
-
-	t.Log("claims =", claims)
 }
