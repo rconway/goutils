@@ -11,15 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// EncodeJSON encodes the supplied JSON object tree as a JSON string
-func EncodeJSON(j map[string]interface{}) ([]byte, error) {
-	b, err := json.Marshal(j)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal bytes to json")
-	}
-	return b, nil
-}
-
 // Base64Encode encodes the supplied data to Base64 string
 func Base64Encode(d []byte) string {
 	return base64.RawURLEncoding.EncodeToString(d)
@@ -42,11 +33,11 @@ func MakeToken(claims map[string]interface{}, key string) (string, error) {
 	header["typ"] = "JWT"
 
 	// signature
-	headerJSON, err := EncodeJSON(header)
+	headerJSON, err := json.Marshal(header)
 	if err != nil {
 		return "", errors.Wrap(err, "could not create header JSON")
 	}
-	claimsJSON, err := EncodeJSON(claims)
+	claimsJSON, err := json.Marshal(claims)
 	if err != nil {
 		return "", errors.Wrap(err, "could not create claims JSON")
 	}
@@ -108,8 +99,10 @@ func GetClaims(token string, key string) (map[string]interface{}, error) {
 	}
 
 	// signature check
-	if Base64Encode(Signature(parts[0], parts[1], key)) != parts[2] {
-		return nil, errors.New("invalid signature")
+	calculatedSignature := Base64Encode(Signature(parts[0], parts[1], key))
+	signature := parts[2]
+	if calculatedSignature != signature {
+		return nil, errors.New(fmt.Sprintf("invalid signature: expected %v, got %v", calculatedSignature, signature))
 	}
 
 	return claims, nil
