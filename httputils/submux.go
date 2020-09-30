@@ -11,20 +11,26 @@ import (
 //   zzz
 type SubMux struct {
 	prefix string
-	mux *http.ServeMux
+	mux    *http.ServeMux
 }
 
 // NewSubMux constructs a SubMux with the supplied prefix.
 func NewSubMux(prefix string) *SubMux {
+	return NewSubWithMux(prefix, http.NewServeMux())
+}
+
+// NewSubWithMux constructs a SubMux with the supplied prefix,
+// and existing ServceMux and re-using
+func NewSubWithMux(prefix string, mux *http.ServeMux) *SubMux {
 	return &SubMux{
 		prefix: "/" + strings.Trim(prefix, "/"),
-		mux: http.NewServeMux(),
+		mux:    mux,
 	}
 }
 
 // Handle is a wrapper around http.ServeMux.Handle.
 func (sub *SubMux) Handle(pattern string, handler http.Handler) {
-	sub.mux.Handle(sub.prefix + "/" + strings.TrimLeft(pattern, "/"), handler)
+	sub.mux.Handle(sub.prefix+"/"+strings.TrimLeft(pattern, "/"), handler)
 }
 
 // HandleFunc is a wrapper around http.ServeMux.HandleFunc.
