@@ -21,10 +21,21 @@ func main() {
 	mux.Use(logger)
 
 	mux.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// URL
 		fmt.Fprintln(w, "URL:", r.URL)
+		// Headers
 		fmt.Fprintln(w, "Headers:")
-		for k, v := range r.Header {
-			fmt.Fprintf(w, "  %v: %v\n", k, v)
+		for headerKey, headerVal := range r.Header {
+			fmt.Fprintf(w, "  %v: %v\n", headerKey, headerVal)
+		}
+		// Query params...
+		fmt.Fprintln(w, "Params:")
+		for paramKey, paramVal := range r.URL.Query() {
+			fmt.Fprint(w, "  ", paramKey, ":")
+			for _, paramValItem := range paramVal {
+				fmt.Fprint(w, " ", paramValItem)
+			}
+			fmt.Fprintln(w)
 		}
 	})
 
