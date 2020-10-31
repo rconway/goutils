@@ -7,5 +7,4 @@ RUN go build -o requestlogger
 FROM alpine
 WORKDIR /app
 COPY --from=builder /src/requestlogger /app/requestlogger
-EXPOSE 80/tcp
 ENTRYPOINT [ "/app/requestlogger" ]
