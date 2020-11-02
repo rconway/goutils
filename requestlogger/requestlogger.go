@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -48,6 +49,8 @@ func main() {
 		fmt.Fprintln(w, "Host:", r.Host)
 		// URL
 		fmt.Fprintln(w, "URL:", r.URL)
+		// Method
+		fmt.Fprintln(w, "Method:", r.Method)
 		// Headers
 		fmt.Fprintln(w, "Headers:")
 		for headerKey, headerVal := range r.Header {
@@ -61,6 +64,13 @@ func main() {
 				fmt.Fprint(w, " ", paramValItem)
 			}
 			fmt.Fprintln(w)
+		}
+		// Body
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Println("ERROR reading request body:", err)
+		} else {
+			fmt.Fprintln(w, "Body:", string(data))
 		}
 	})
 
