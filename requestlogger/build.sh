@@ -7,12 +7,18 @@ BIN_DIR="$(pwd)"
 trap "cd '${ORIG_DIR}'" EXIT
 
 TAG="rconway/requestlogger"
+VERSION="1.0"
 
 echo "Building image to tag: $TAG"
-docker build -t "$TAG" .
+docker build -t "${TAG}:${VERSION}" .
+docker tag "${TAG}:${VERSION}" "${TAG}:latest"
 
 if test "$1" = "push"
 then
-    echo "Pushing tag '$TAG' to DockerHub..."
-    docker push "$TAG"
+    for v in "${VERSION}" "latest"
+    do
+        image="${TAG}:${v}"
+        echo "Pushing tag '${image}' to DockerHub..."
+        docker push "${image}"
+    done
 fi
