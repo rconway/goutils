@@ -41,7 +41,7 @@ func main() {
 	PORT := getPort()
 	log.Println("request logger running on port:", PORT)
 
-	mux := mux.NewRouter()
+	mux := mux.NewRouter().SkipClean(true)
 	mux.Use(logger)
 
 	mux.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +74,5 @@ func main() {
 		}
 	})
 
-	http.Handle("/", mux)
-
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", PORT), nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", PORT), mux))
 }
