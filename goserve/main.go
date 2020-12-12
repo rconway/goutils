@@ -4,19 +4,32 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+
+	"github.com/gorilla/handlers"
 )
 
 func main() {
-	// router := mux.NewRouter()
-	// router.PathPrefix("/").Handler(http.FileServer(http.Dir("./")))
-	// http.ListenAndServe(":8080", router)
-
 	dir := "./"
 	port := 8080
 
-	http.Handle("/", http.FileServer(http.Dir("./")))
+	h := http.FileServer(http.Dir(dir))
+	h = handlers.CombinedLoggingHandler(os.Stdout, h)
 
-	log.Printf("goserve: serving directory %v on port %v", dir, port)
+	http.Handle("/", h)
 
-	http.ListenAndServe(fmt.Sprint(":", port), nil)
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		log.Fatalf("ERROR: could not access directory - %v\n", dir)
+	}
+
+	go func() {
+		log.Fatal(http.ListenAndServe(fmt.Sprint(":", port), nil))
+	}()
+
+	log.Printf("goserve: serving directory %v on port %v", absDir, port)
+
+	c := make(chan int)
+	<-c
 }
