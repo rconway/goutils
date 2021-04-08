@@ -1,46 +1,66 @@
 package httputils
 
 import (
+	"io/fs"
 	"net/http"
 	"os"
-	"path/filepath"
+	"path"
+	"strings"
 )
 
 // SpaHandler implements the http.Handler interface, so we can use it
-// to respond to HTTP requests. The path to the static directory and
-// path to the index file within that static directory are used to
-// serve the SPA in the given static directory.
+// to respond to HTTP requests. The supplied filesystem is used to deliver
+// the static content, which is assumed to be at the root of the filesystem.
 type SpaHandler struct {
-	Root       http.FileSystem
-	PathPrefix string
-	IndexPath  string
-	StatFunc   func(name string) (os.FileInfo, error)
+	Fsys fs.FS
 }
 
-// ServeHTTP inspects the URL path to locate a file within the static dir
-// on the SPA handler. If a file is found, it will be served. If not, the
-// file located at the index path on the SPA handler will be served. This
-// is suitable behavior for serving an SPA (single page application).
+// NewSpaHandler creates an SpaHandler instance whose static content is provided
+// at the root of the supplied filesystem.
+func NewSpaHandler(fsys fs.FS) *SpaHandler {
+	return &SpaHandler{Fsys: fsys}
+}
+
+// ServeHTTP inspects the URL path to locate a file within the filesystem
+// on the SPA handler. If a file is found, it will be served. If not, the path
+// is adjusted to serve the root path, i.e. index.html. This is suitable behavior
+// for serving an SPA (single page application).
 func (h SpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// get the absolute path to prevent directory traversal
-	path, err := filepath.Abs(r.URL.Path)
-	if err != nil {
-		// if we failed to get the absolute path respond with a 400 bad request
-		// and stop
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	// Treat empty path as '/'
+	if len(r.URL.Path) == 0 {
+		r.URL.Path = "/"
 	}
 
-	// prepend the path with the path to the static directory
-	path = filepath.Join(h.PathPrefix, path)
+	// ensure we have a clean path
+	r.URL.Path = path.Clean(r.URL.Path)
+
+	// Trim leading '/', unless root path
+	if len(r.URL.Path) > 1 {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/")
+	}
 
 	// check whether a file exists at the given path
-	_, err = h.StatFunc(path)
-	if err != nil {
-		// If cannot stat file then use the root index file
-		r.URL.Path = filepath.Join(h.PathPrefix, h.IndexPath)
+	// - excluding root path which is a synonym for the index file
+	if r.URL.Path != "/" {
+		_, err := fs.Stat(h.Fsys, r.URL.Path)
+		if os.IsNotExist(err) {
+			// If cannot stat file then use the root index file
+			r.URL.Path = "/"
+		} else if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// For root path, check that we have the index file.
+	if r.URL.Path == "/" {
+		_, err := fs.Stat(h.Fsys, "index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 	}
 
 	// Use http.FileServer to serve the static dir
-	http.FileServer(h.Root).ServeHTTP(w, r)
+	http.FileServer(http.FS(h.Fsys)).ServeHTTP(w, r)
 }
