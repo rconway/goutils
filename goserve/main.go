@@ -1,18 +1,44 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/gorilla/handlers"
 )
 
+var defaultPort = 8080
+
+func getDefaultPort() (port int) {
+	portStr, ok := os.LookupEnv("PORT")
+	if ok {
+		var err error
+		port, err = strconv.Atoi(portStr)
+		if err != nil {
+			port = defaultPort
+		}
+	} else {
+		port = defaultPort
+	}
+	return
+}
+
+func processCommandline(port *int) {
+	flag.IntVar(port, "port", getDefaultPort(), "port to listen on")
+	flag.Parse()
+}
+
 func main() {
+
+	var port int
+	processCommandline(&port)
+
 	dir := "./"
-	port := 80
 
 	h := http.FileServer(http.Dir(dir))
 	h = handlers.CombinedLoggingHandler(os.Stdout, h)
@@ -23,10 +49,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("ERROR: could not access directory - %v\n", dir)
 	}
-
-	go func() {
-		log.Fatal(http.ListenAndServe(fmt.Sprint(":", port), nil))
-	}()
 
 	// start listening async
 	go http.ListenAndServe(fmt.Sprint(":", port), nil)
