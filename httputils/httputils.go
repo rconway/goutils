@@ -1,6 +1,3 @@
-/*
-Package httputils provides utilities to complement the net/http package.
-*/
 package httputils
 
 import (
@@ -39,7 +36,7 @@ func SubHandlerFunc(f http.HandlerFunc) SubHandler {
 // 	 	}))
 // 	 	return mux
 // 	 }
-//	 
+//
 // 	 // define a handler for 'auth' that registers the login handler under subpath '/login'
 // 	 func authHandler(prefix string) http.Handler {
 // 	 	mux := http.NewServeMux()
@@ -49,7 +46,7 @@ func SubHandlerFunc(f http.HandlerFunc) SubHandler {
 // 	 	httputils.MuxSubGroup(mux, prefix, "/login", loginHandler)
 // 	 	return mux
 // 	 }
-//	 
+//
 // 	 // define root handler that registers the auth handler under subpath '/auth' (which implies also '/auth/login')
 // 	 root := http.NewServeMux()
 // 	 httputils.MuxSubGroup(root, prefix, "/", httputils.SubHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
