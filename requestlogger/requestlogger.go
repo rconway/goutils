@@ -37,6 +37,8 @@ func getPort() (port uint16) {
 
 func myHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// RequestURI
+		fmt.Fprintln(w, "RequestURI:", r.RequestURI)
 		// Host
 		fmt.Fprintln(w, "Host:", r.Host)
 		// URL
