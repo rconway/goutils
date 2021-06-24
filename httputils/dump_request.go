@@ -6,13 +6,12 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/Masterminds/sprig"
 )
 
-var templateStr = `
+var txtTemplate = `
 {{- /* eat whitespace */ -}}
 Host: {{ .R.Host }}
 URL: {{ .R.URL }}
@@ -29,24 +28,24 @@ Body:
 {{ .Body | indent 2 }}
 `
 
+var tmpl *template.Template
+
+func init() {
+	var err error
+	tmpl = template.New("dump").Funcs(sprig.FuncMap())
+	tmpl, err = tmpl.Parse(txtTemplate)
+	if err != nil {
+		tmpl, _ = tmpl.Parse(fmt.Sprint("ERROR parsing template:", err))
+		return
+	}
+}
+
 type requestDetails struct {
 	R    *http.Request
 	Body string
 }
 
-/*
-DumpRequest provides a helper function to dump the received request
-to the output writer, e.g dump to standard-out...
-
-  httputils.DumpRequest(os.stdout, r)
-*/
-func DumpRequest(w io.Writer, r *http.Request) {
-	tmpl, err := template.New("dump").Funcs(sprig.FuncMap()).Parse(templateStr)
-	if err != nil {
-		fmt.Fprintln(w, "ERROR parsing template:", err)
-		return
-	}
-
+func dumpRequestImpl(templateStr string, w io.Writer, r *http.Request) {
 	// Prepare request details
 	requestDetails := requestDetails{}
 	requestDetails.R = r
@@ -72,37 +71,22 @@ func DumpRequest(w io.Writer, r *http.Request) {
 }
 
 /*
+DumpRequestText provides a helper function to dump the received request
+to the output writer in 'text' format, e.g dump to standard-out...
+
+  httputils.DumpRequestText(os.stdout, r)
+*/
+func DumpRequestText(w io.Writer, r *http.Request) {
+	dumpRequestImpl(txtTemplate, w, r)
+}
+
+/*
 DumpRequest provides a helper function to dump the received request
 to the output writer, e.g dump to standard-out...
+Synonym for function DumpRequestText()
 
   httputils.DumpRequest(os.stdout, r)
 */
-func xDumpRequest(w io.Writer, r *http.Request) {
-	// Host
-	fmt.Fprintln(w, "Host:", r.Host)
-	// URL
-	fmt.Fprintln(w, "URL:", r.URL)
-	// Method
-	fmt.Fprintln(w, "Method:", r.Method)
-	// Headers
-	fmt.Fprintln(w, "Headers:")
-	for headerKey, headerVal := range r.Header {
-		fmt.Fprintf(w, "  %v: %v\n", headerKey, headerVal)
-	}
-	// Query params...
-	fmt.Fprintln(w, "Params:")
-	for paramKey, paramVal := range r.URL.Query() {
-		fmt.Fprint(w, "  ", paramKey, ":")
-		for _, paramValItem := range paramVal {
-			fmt.Fprint(w, " ", paramValItem)
-		}
-		fmt.Fprintln(w)
-	}
-	// Body
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Println("ERROR reading request body:", err)
-	} else {
-		fmt.Fprintln(w, "Body:", string(data))
-	}
+func DumpRequest(w io.Writer, r *http.Request) {
+	DumpRequestText(w, r)
 }
